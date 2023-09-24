@@ -1,3 +1,4 @@
+#用于处理device发送给MQTT的信息
 import datetime
 import json
 from json import JSONDecodeError
@@ -6,6 +7,9 @@ import cx_Oracle
 
 
 # 定义回调函数来处理连接成功的事件
+import redis
+
+
 def on_connect(c, userdata, flags, rc):
     print("Connected with result code " + str(rc))
 
@@ -24,7 +28,9 @@ def on_message(c, userdata, msg):
     if msg.topic == "/smartpower/status":
         handle_status_message(payload_dict)
     if msg.topic == "/smartpower/systeminfo":
-        pass
+        handle_systeminfo_message(payload_dict)
+    if msg.topic == "/smartpower/setting":
+        handle_setting_response(payload_dict)
     print("Received message '" + str(msg.payload) + "' on topic '" + msg.topic + "'")
 
 
@@ -70,6 +76,14 @@ def handle_systeminfo_message(d: dict):
         pool_oracle.close()
 
 
+def handle_setting_response(d: dict):
+    message_id = d.get("MESSAGEID")
+    result = d.get("Result")
+    if message_id and result:
+        redis_conn.hset(message_id, "result", result)
+        redis_conn.expire(message_id, 60)
+
+
 if __name__ == "__main__":
     topic_list = [
         "/smartpower/status",
@@ -80,6 +94,8 @@ if __name__ == "__main__":
         user="SMARTPLUG", password="ABB", dsn="localhost:1521/orclpdb", min=10, max=10, increment=0, threaded=True,
         encoding="UTF-8")
 
+    # redis连接
+    redis_conn = redis.Redis()
     # 创建MQTT客户端实例
     client = mqtt.Client()
 

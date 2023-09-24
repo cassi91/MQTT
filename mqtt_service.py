@@ -7,7 +7,7 @@ import os
 import sys
 import logging
 from logging.handlers import TimedRotatingFileHandler
-from paho.mqtt
+import paho.mqtt.client as mqtt
 
 
 class MyService(win32serviceutil.ServiceFramework):
