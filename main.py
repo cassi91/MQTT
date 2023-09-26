@@ -1,15 +1,13 @@
-#用于处理device发送给MQTT的信息
+# 用于处理device发送给MQTT的信息
 import datetime
 import json
 from json import JSONDecodeError
 import paho.mqtt.client as mqtt
 import cx_Oracle
-
-
-# 定义回调函数来处理连接成功的事件
 import redis
 
 
+# 定义回调函数来处理连接成功的事件
 def on_connect(c, userdata, flags, rc):
     print("Connected with result code " + str(rc))
 
@@ -29,14 +27,14 @@ def on_message(c, userdata, msg):
         handle_status_message(payload_dict)
     if msg.topic == "/smartpower/systeminfo":
         handle_systeminfo_message(payload_dict)
-    if msg.topic == "/smartpower/setting":
+    if msg.topic == "/smartpower/settingres":
         handle_setting_response(payload_dict)
     print("Received message '" + str(msg.payload) + "' on topic '" + msg.topic + "'")
 
 
 def handle_status_message(d: dict):
     k = d.keys()
-    bind_str = [":"+str(x) for x in range(len(k)+2)]
+    bind_str = [":" + str(x) for x in range(len(k) + 2)]
     v = list(d.values()) + [datetime.datetime.now(), datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")]
     # 写入 status
     status_sql = "INSERT INTO SMARTPLUG.DEVICE_STATUS(" + (",".join(k)).upper() + ", INSERT_TIME, ITIME) VALUES (" + \
@@ -81,13 +79,15 @@ def handle_setting_response(d: dict):
     result = d.get("Result")
     if message_id and result:
         redis_conn.hset(message_id, "result", result)
+        redis_conn.hset(message_id, "message", json.dumps(d))
         redis_conn.expire(message_id, 60)
 
 
 if __name__ == "__main__":
     topic_list = [
         "/smartpower/status",
-        "/smartpower/systeminfo"
+        "/smartpower/systeminfo",
+        "/smartpower/settingres"
     ]
     # cx_oracle 连接池
     pool_oracle = cx_Oracle.SessionPool(
