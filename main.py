@@ -67,8 +67,8 @@ def handle_systeminfo_message(d: dict):
     conn = pool_oracle.acquire()
     cursor = conn.cursor()
     try:
-        cursor.execute(device_info_sql, device_value)
         cursor.execute(delete_device_info, (d.get("DeviceID"),))
+        cursor.execute(device_info_sql, device_value)
         conn.commit()
     except Exception as e:
         print("system info ex: ", e)
