@@ -47,31 +47,33 @@ def handle_status_message(d: dict):
     cursor = conn.cursor()
     try:
         cursor.execute(status_sql, v)
-        cursor.execute(delete_device_first, d.get("DeviceID"))
-        cursor.execute(status_first_sql)
+        cursor.execute(delete_device_first, (d.get("DeviceID"),))
+        cursor.execute(status_first_sql, v)
         conn.commit()
     except Exception as e:
-        print(e)
+        print("status ex: ", e)
     finally:
         pool_oracle.release(conn)
 
 
 def handle_systeminfo_message(d: dict):
-    device_info_sql = "INSERT INTO SMARTPLUG.DEVICE_INFO(DEVICEID, PROJECT, TYPE, OTP_VALUE, TIMEZONE, FW_VERSION, " \
-                      "MAX_CURRENT_STATUS, MAX_CURRENT_VALUE, ACOUTAUTORECOVER, CO_VALUE, OVER_TEMP, INSERTTIME)" \
+    device_info_sql = "INSERT INTO SMARTPLUG.DEVICE_INFO(DEVICEID, PROJECT, TYPE, OTP_VALUE, TIMEZONE, FW_VERSION, " + \
+                      "MAX_CURRENT_STATUS, MAX_CURRENT_VALUE, ACOUTAUTORECOVER, CO_VALUE, OVER_TEMP, INSERT_TIME)" + \
                       "VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12)"
-    device_value = [d.get("DeviceID"), d.get("Project"), d.get("Type"), d.get("OTP_Value"), d.get("TimeZone"),
+    device_value = (d.get("DeviceID"), d.get("Project"), d.get("Type"), d.get("OTP_Value"), d.get("TimeZone"),
                     d.get("FwVersion"), d.get("MaxCurrentStatus"), d.get("MaxCurrentValue"), d.get("AcOutAutoRecover"),
-                    d.get("CO_Value"), d.get("OVER_TEMP"), datetime.datetime.now()]
+                    d.get("CO_Value"), d.get("OVER_TEMP"), datetime.datetime.now())
+    delete_device_info = "DELETE FROM SMARTPLUG.DEVICE_INFO WHERE DEVICEID=:1"
     conn = pool_oracle.acquire()
     cursor = conn.cursor()
     try:
         cursor.execute(device_info_sql, device_value)
+        cursor.execute(delete_device_info, (d.get("DeviceID"),))
         conn.commit()
     except Exception as e:
-        print(e)
+        print("system info ex: ", e)
     finally:
-        pool_oracle.close()
+        pool_oracle.release(conn)
 
 
 def handle_setting_response(d: dict):

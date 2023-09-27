@@ -4,12 +4,12 @@ import time
 
 from flask import Flask, request
 import redis
-from Crypto.Cipher import AES
+# from Crypto.Cipher import AES
 import paho.mqtt.client as mqtt
 
 app = Flask(__name__)
 
-
+"""
 class MyAESCipher:
     IV = b'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
     KEY = b"qc5644abd868x36f"
@@ -39,7 +39,7 @@ class MyAESCipher:
     def decrypt(cls, enc):
         enc = base64.b64decode(enc)
         return cls.__un_pad(cls.C.decrypt(enc).decode('utf-8'))
-
+"""
 
 @app.route("/SmartPlugSetting", methods=["POST", "GET"])
 def smart_plug_setting():
@@ -63,4 +63,5 @@ if __name__ == "__main__":
     client = mqtt.Client()
     client.connect("mlbaeabbserver.cn", 1883, 60)
     redis_conn = redis.Redis()
-    print(MyAESCipher.encrypt("test"))
+
+    app.run('0.0.0.0', 8862)
