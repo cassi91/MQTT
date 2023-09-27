@@ -5,9 +5,13 @@ import time
 from flask import Flask, request
 import redis
 # from Crypto.Cipher import AES
-import paho.mqtt.client as mqtt
+from flask_mqtt import Mqtt
 
 app = Flask(__name__)
+app.config['MQTT_BROKER_URL'] = '123.206.94.11'
+app.config['MQTT_BROKER_PORT'] = 1883
+
+mqtt = Mqtt(app)
 
 """
 class MyAESCipher:
@@ -49,7 +53,8 @@ def smart_plug_setting():
         d = eval(json_data[:-2])
         message_id = d.get("MESSAGEID")
         if message_id:
-            client.publish("/smartpower/command", json_data)
+            print(message_id)
+            mqtt.publish("/smartpower/command", json_data, qos=2)
             for i in range(10):
                 time.sleep(0.5)
                 r = redis_conn.hget(message_id, "message")
@@ -60,8 +65,6 @@ def smart_plug_setting():
 
 
 if __name__ == "__main__":
-    client = mqtt.Client()
-    client.connect("mlbaeabbserver.cn", 1883, 60)
     redis_conn = redis.Redis()
 
     app.run('0.0.0.0', 8862)
